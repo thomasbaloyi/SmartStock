@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NuGet.Protocol;
 using SmartStock.Models;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text.Json;
 
 namespace SmartStock.Controllers
@@ -120,7 +121,6 @@ namespace SmartStock.Controllers
         [HttpPut]
         public async Task<IActionResult> Edit(ProductModel model)
         {
-            Console.WriteLine(model.Id);
 
             using (HttpClient client = new HttpClient())
             {
@@ -146,9 +146,30 @@ namespace SmartStock.Controllers
 
 
         // GET: ProductController/Delete/5
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            return View();
+            ProductModel product = new();
+
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(BaseUrl);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                HttpResponseMessage response = await client.GetAsync("ProductsAPI/" + id);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+                    product = JsonSerializer.Deserialize<ProductModel>(content);
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                }
+            }
+
+            return View(product);
         }
 
         // POST: ProductController/Delete/5
