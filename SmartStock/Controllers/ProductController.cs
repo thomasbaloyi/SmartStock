@@ -118,17 +118,18 @@ namespace SmartStock.Controllers
             return View(product);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Edit(ProductModel model)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, IFormCollection collection)
         {
 
             using (HttpClient client = new HttpClient())
             {
 
-                string url = BaseUrl + "/ProductsAPI/" + model.Id;
+                string url = BaseUrl + "/ProductsAPI/" + id;
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, url);
-                request.Content = new StringContent(model.ToJson(), System.Text.Encoding.UTF8, "application/json");
+                request.Content = new StringContent(collection.ToJson(), System.Text.Encoding.UTF8, "application/json");
                 HttpResponseMessage response = await client.SendAsync(request);
 
                 if (response.IsSuccessStatusCode)
@@ -137,7 +138,9 @@ namespace SmartStock.Controllers
                 }
                 else
                 {
-                    return RedirectToActionPermanent(nameof(Details), new { id = model.Id });
+                    Console.WriteLine(response.StatusCode);
+                    Console.WriteLine(response.Content.ToJson());
+                    return RedirectToActionPermanent(nameof(Details), new { id });
                 }
             }
 
@@ -175,15 +178,24 @@ namespace SmartStock.Controllers
         // POST: ProductController/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public async Task<IActionResult> Delete(int id, IFormCollection collection)
         {
-            try
+            using (var client = new HttpClient())
             {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
+                client.BaseAddress = new Uri(BaseUrl);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                HttpResponseMessage response = await client.DeleteAsync("ProductsAPI/" + id);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToActionPermanent(nameof(Index));
+                }
+                else
+                {
+                    return RedirectToActionPermanent(nameof(Details), new { id });
+                }
             }
         }
     }
