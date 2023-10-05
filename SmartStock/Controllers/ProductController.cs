@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol;
 using SmartStock.Models;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -62,13 +63,7 @@ namespace SmartStock.Controllers
                 {
                     ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
                 }
-            }
-
-            if (product != null)
-            {
-                Console.WriteLine(product.Name);
-            }
-      
+            }      
 
             return View(product);
         }
@@ -95,25 +90,60 @@ namespace SmartStock.Controllers
         }
 
         // GET: ProductController/Edit/5
-        public ActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            return View();
+
+            ProductModel product = new();
+
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(BaseUrl);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                HttpResponseMessage response = await client.GetAsync("ProductsAPI/" + id);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string content = await response.Content.ReadAsStringAsync();
+                    product = JsonSerializer.Deserialize<ProductModel>(content);
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                }
+            }
+
+            return View(product);
         }
 
-        // POST: ProductController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        [HttpPut]
+        public async Task<IActionResult> Edit(ProductModel model)
         {
-            try
+            Console.WriteLine(model.Id);
+
+            using (HttpClient client = new HttpClient())
             {
-                return RedirectToAction(nameof(Index));
+
+                string url = BaseUrl + "/ProductsAPI/" + model.Id;
+
+                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, url);
+                request.Content = new StringContent(model.ToJson(), System.Text.Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await client.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToActionPermanent(nameof(Index));
+                }
+                else
+                {
+                    return RedirectToActionPermanent(nameof(Details), new { id = model.Id });
+                }
             }
-            catch
-            {
-                return View();
-            }
+
+            
         }
+
 
         // GET: ProductController/Delete/5
         public ActionResult Delete(int id)
