@@ -52,3 +52,15 @@
         }
     </tbody>
 </table>
+
+<div>
+    <div>
+        @Html.ActionLink("Previous Page", "Index", new { segment = -1 })
+    </div>
+
+    <div>
+        @Html.ActionLink("Next Page", "Index", new { segment = 1 })
+    </div>
+
+</div>
+

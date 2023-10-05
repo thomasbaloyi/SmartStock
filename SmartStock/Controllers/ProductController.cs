@@ -11,34 +11,47 @@ namespace SmartStock.Controllers
     public class ProductController : Controller
     {
         private const string BaseUrl = "https://gendacproficiencytest.azurewebsites.net/API/ProductsAPI";
+        private int paginator = 0;
+        List<ProductModel> products = new(0);
+
 
         // GET: ProductController
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? segment)
         {
-            List<ProductModel> products = new(0);
-
-            using (var client = new HttpClient())
+            if (segment != null)
             {
-                client.BaseAddress = new Uri(BaseUrl);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                HttpResponseMessage response = await client.GetAsync("ProductsAPI");
-
-                if (response.IsSuccessStatusCode)
+                Console.WriteLine(this.paginator + ((int)segment * 10));
+                this.paginator = this.paginator + ((int)segment * 10);
+                if (this.paginator < 0)
                 {
-                    string content = await response.Content.ReadAsStringAsync();
-                    products = JsonSerializer.Deserialize<List<ProductModel>>(content);
+                    this.paginator = 0;
                 }
-                else
+            } 
+
+            if (products.Count == 0)
+            {
+                using (var client = new HttpClient())
                 {
-                    // Handle the error appropriately
-                    ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                    client.BaseAddress = new Uri(BaseUrl);
+                    client.DefaultRequestHeaders.Accept.Clear();
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                    HttpResponseMessage response = await client.GetAsync("ProductsAPI");
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string content = await response.Content.ReadAsStringAsync();
+                        products = JsonSerializer.Deserialize<List<ProductModel>>(content);
+                    }
+                    else
+                    {
+                        // Handle the error appropriately
+                        ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                    }
                 }
             }
-
-
-            return View(products);
+            
+            return View(new ArraySegment<ProductModel>(products.ToArray(), this.paginator, 10));
         }
 
 
