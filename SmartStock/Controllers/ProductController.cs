@@ -78,15 +78,33 @@ namespace SmartStock.Controllers
         // POST: ProductController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<IActionResult> Create(IFormCollection collection)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                using (HttpClient client = new HttpClient())
+                {
+                    string url = BaseUrl + "/ProductsAPI";
+
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
+                    request.Content = new StringContent(collection.ToJson(), System.Text.Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = await client.PostAsync(url, request.Content);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return RedirectToActionPermanent(nameof(Index));
+                    }
+                    else
+                    {
+                        Console.WriteLine(response.StatusCode);
+                        Console.WriteLine(response.Content.ToJson());
+                        return RedirectToActionPermanent(nameof(HomeController));
+                    }
+                }
             }
             catch
             {
-                return View();
+                return RedirectToActionPermanent(nameof(HomeController));
             }
         }
 
