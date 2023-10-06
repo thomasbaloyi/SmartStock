@@ -7,7 +7,7 @@
 <h1>Product Details</h1>
 
 <div>
-    <h4>ProductModel</h4>
+    <h4>Product</h4>
     <hr />
     <dl class="row">
         <dt class = "col-sm-2">
@@ -36,7 +36,7 @@
         </dd>
     </dl>
 </div>
-<div>
+<div class="flex-row">
     @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
-    <a asp-action="Index">Back to List</a>
+    <a class="btn btn-primary" asp-action="Index">Back to List</a>
 </div>

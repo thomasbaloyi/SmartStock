@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using NuGet.Protocol;
 using SmartStock.Models;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 
 namespace SmartStock.Controllers
@@ -54,8 +56,6 @@ namespace SmartStock.Controllers
                     }
                 }
             }
-
-            Console.WriteLine(this.paginator);
             
             return View(new ArraySegment<ProductModel>(products.ToArray(), this.paginator*10, 10));
         }
@@ -123,7 +123,7 @@ namespace SmartStock.Controllers
                     string url = BaseUrl + "/ProductsAPI";
 
                     HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, url);
-                    request.Content = new StringContent(collection.ToJson(), System.Text.Encoding.UTF8, "application/json");
+                    request.Content = new StringContent(collection.ToJson(), Encoding.UTF8, "application/json");
                     HttpResponseMessage response = await client.PostAsync(url, request.Content);
 
                     if (response.IsSuccessStatusCode)
@@ -176,29 +176,26 @@ namespace SmartStock.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, IFormCollection collection)
         {
-
-            using (HttpClient client = new HttpClient())
+            using (var client = new HttpClient())
             {
+                client.BaseAddress = new Uri(BaseUrl);
+                using HttpResponseMessage response = await client.PutAsJsonAsync("ProductsAPI/"+id, collection.ToJson());
 
-                string url = BaseUrl + "/ProductsAPI/" + id;
-
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Put, url);
-                request.Content = new StringContent(collection.ToJson(), System.Text.Encoding.UTF8, "application/json");
-                HttpResponseMessage response = await client.SendAsync(request);
+                Console.WriteLine(response.RequestMessage);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    return RedirectToActionPermanent(nameof(Index));
+                    Console.Write("Here");
+                    return RedirectToActionPermanent(nameof(Details), new { id });
                 }
                 else
                 {
-                    Console.WriteLine(response.StatusCode);
-                    Console.WriteLine(response.Content.ToJson());
-                    return RedirectToActionPermanent(nameof(Details), new { id });
+                   
+                    return RedirectToActionPermanent(nameof(Index));
                 }
             }
 
-            
+
         }
 
 
