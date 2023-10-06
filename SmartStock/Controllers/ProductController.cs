@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using NuGet.Protocol;
 using SmartStock.Models;
-using System.Net.Http;
+using System.Diagnostics;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -12,9 +10,15 @@ namespace SmartStock.Controllers
 {
     public class ProductController : Controller
     {
+        private readonly ILogger<ProductController> _logger;
         private const string BaseUrl = "https://gendacproficiencytest.azurewebsites.net/API/ProductsAPI";
         private int paginator = 0;
         List<ProductModel> products = new(0);
+
+        public ProductController(ILogger<ProductController> logger)
+        {
+            _logger = logger;
+        }
 
 
         // GET: ProductController
@@ -51,8 +55,8 @@ namespace SmartStock.Controllers
                     }
                     else
                     {
-                        // Handle the error appropriately
-                        ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                        this._logger.LogError("Failed to get products", response.ToString());
+                        return RedirectToActionPermanent(nameof(Error));
                     }
                 }
             }
@@ -98,7 +102,8 @@ namespace SmartStock.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                    this._logger.LogError("Failed to fetch product", response.ToString());
+                    return RedirectToActionPermanent(nameof(Error));
                 }
             }      
 
@@ -132,9 +137,8 @@ namespace SmartStock.Controllers
                     }
                     else
                     {
-                        Console.WriteLine(response.StatusCode);
-                        Console.WriteLine(response.Content.ToJson());
-                        return RedirectToActionPermanent(nameof(HomeController));
+                        this._logger.LogError("Failed to create product", response);
+                        return RedirectToActionPermanent(nameof(Error));
                     }
                 }
             }
@@ -165,7 +169,8 @@ namespace SmartStock.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                    this._logger.LogError("Failed to fetch product", response.ToString());
+                    return RedirectToActionPermanent(nameof(Error));
                 }
             }
 
@@ -179,23 +184,25 @@ namespace SmartStock.Controllers
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(BaseUrl);
-                using HttpResponseMessage response = await client.PutAsJsonAsync("ProductsAPI/"+id, collection.ToJson());
-
-                Console.WriteLine(response.RequestMessage);
+                using HttpResponseMessage response = await client.PutAsJsonAsync("ProductsAPI/"+id, collection);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    Console.Write("Here");
                     return RedirectToActionPermanent(nameof(Details), new { id });
                 }
                 else
                 {
-                   
-                    return RedirectToActionPermanent(nameof(Index));
+                    this._logger.LogError("Failed to edit product", response.ToString());
+                    return RedirectToActionPermanent(nameof(Error));
                 }
             }
 
 
+        }
+
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
 
@@ -219,7 +226,8 @@ namespace SmartStock.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Error retrieving data from the API.");
+                    this._logger.LogError("Failed to fetch product", response.ToString());
+                    return RedirectToActionPermanent(nameof(Error));
                 }
             }
 
@@ -245,7 +253,8 @@ namespace SmartStock.Controllers
                 }
                 else
                 {
-                    return RedirectToActionPermanent(nameof(Details), new { id });
+                    this._logger.LogError("Failed to delete product", response);
+                    return RedirectToActionPermanent(nameof(Error));
                 }
             }
         }
