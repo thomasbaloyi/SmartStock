@@ -16,3 +16,10 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.space-around {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+
+}

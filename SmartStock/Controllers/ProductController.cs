@@ -20,13 +20,17 @@ namespace SmartStock.Controllers
         {
             if (segment != null)
             {
-                Console.WriteLine(this.paginator + ((int)segment * 10));
-                this.paginator = this.paginator + ((int)segment * 10);
-                if (this.paginator < 0)
+                if (segment == 1)
                 {
-                    this.paginator = 0;
+                    this.increment();
+                }  else
+                {
+                    this.decrement();
                 }
-            } 
+            } else
+            {
+                segment = 0;
+            }
 
             if (products.Count == 0)
             {
@@ -50,9 +54,28 @@ namespace SmartStock.Controllers
                     }
                 }
             }
+
+            Console.WriteLine(this.paginator);
             
-            return View(new ArraySegment<ProductModel>(products.ToArray(), this.paginator, 10));
+            return View(new ArraySegment<ProductModel>(products.ToArray(), this.paginator*10, 10));
         }
+
+        private void increment()
+        {
+            this.paginator++;
+            this.paginator = this.paginator;
+        }
+
+        private void decrement()
+        {
+            if (this.paginator != 0)
+            {
+                this.paginator--;
+                this.paginator = this.paginator;
+            }
+            
+        }
+
 
 
         // GET: ProductController/Details/5
